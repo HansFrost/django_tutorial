@@ -1,0 +1,37 @@
+version: '3'
+volumes:
+  pgdata:
+services:
+  python: &python #image: python:3.7
+    build:
+      context: .
+      dockerfile: docker/dev/python/Dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DJANGO_SETTINGS_MODULE=django_tutorial.settings.dev
+    volumes:
+      - .:/app
+    ports:
+      - 8000:8000
+    command: python manage.py runserver 0.0.0.0:8000
+    depends_on:
+      - postgres
+      - rabbitmq
+  postgres:
+    image: postgres:12.2
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=Lfagoew64
+    volumes:
+      - pgdata:/var/lib/postgresql/data/
+  rabbitmq:
+    image: rabbitmq:3.8-alpine
+  celery_worker:
+    <<: *python
+    command: celery -A django_tutorial worker --loglevel=info
+    ports: []
+    depends_on:
+      - rabbitmq
+      - postgres
